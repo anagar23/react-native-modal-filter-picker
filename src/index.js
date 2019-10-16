@@ -3,40 +3,36 @@ import PropTypes from 'prop-types'
 import {
   Modal,
   View,
-  ListView,
+  FlatList,
   TouchableOpacity,
   Text,
   TextInput,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Dimensions,
+  StyleSheet
 } from 'react-native'
 
-
-import styles from './styles'
-
-
 export default class ModalFilterPicker extends Component {
-  constructor (props, ctx) {
+  constructor(props, ctx) {
     super(props, ctx)
 
     this.state = {
       filter: '',
-      ds: new ListView.DataSource({
-        rowHasChanged: (r1, r2) => r1.key !== r2.key
-      }).cloneWithRows(props.options)
+      ds: props.options
     }
   }
 
-  componentWillReceiveProps (newProps) {
+  componentWillReceiveProps(newProps) {
     if ((!this.props.visible && newProps.visible) || (this.props.options !== newProps.options)) {
       this.setState({
         filter: '',
-        ds: this.state.ds.cloneWithRows(newProps.options),
+        ds: newProps.options,
       })
     }
   }
 
-  render () {
+  render() {
     const {
       title,
       titleTextStyle,
@@ -105,27 +101,27 @@ export default class ModalFilterPicker extends Component {
     return (
       <View style={listContainerStyle || styles.listContainer}>
         {filter}
-        {this.renderOptionList()}
+        {this.renderOptionList1()}
       </View>
     )
   }
 
-  renderOptionList = () => {
+  renderOptionList1 = () => {
     const {
       noResultsText,
       listViewProps,
       keyboardShouldPersistTaps
     } = this.props
 
-    const { ds } = this.state
+    const ds = this.state.ds
 
-    if (1 > ds.getRowCount()) {
+    if (1 > ds.length) {
       return (
-        <ListView
+        <FlatList
           enableEmptySections={false}
           {...listViewProps}
-          dataSource={ds.cloneWithRows([{ key: '_none' }])}
-          renderRow={() => (
+          data={[{ key: '_none' }]}
+          renderItem={(item) => (
             <View style={styles.noResults}>
               <Text style={styles.noResultsText}>{noResultsText}</Text>
             </View>
@@ -134,18 +130,18 @@ export default class ModalFilterPicker extends Component {
       )
     } else {
       return (
-        <ListView
+        <FlatList
           enableEmptySections={false}
           {...listViewProps}
-          dataSource={ds}
-          renderRow={this.renderOption}
+          data={ds}
+          renderItem={this.renderOption1}
           keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         />
       )
     }
   }
 
-  renderOption = (rowData) => {
+  renderOption1 = ({ item, index }) => {
     const {
       selectedOption,
       renderOption,
@@ -153,14 +149,14 @@ export default class ModalFilterPicker extends Component {
       selectedOptionTextStyle
     } = this.props
 
-    const { key, label } = rowData
+    const { key, label } = item
 
     let style = styles.optionStyle
-    let textStyle = optionTextStyle||styles.optionTextStyle
+    let textStyle = optionTextStyle || styles.optionTextStyle
 
     if (key === selectedOption) {
       style = styles.selectedOptionStyle
-      textStyle = selectedOptionTextStyle ||styles.selectedOptionTextStyle
+      textStyle = selectedOptionTextStyle || styles.selectedOptionTextStyle
     }
 
     if (renderOption) {
@@ -204,12 +200,12 @@ export default class ModalFilterPicker extends Component {
       ? options
       : options.filter(({ searchKey, label, key }) => (
         0 <= label.toLowerCase().indexOf(filter) ||
-          (searchKey && 0 <= searchKey.toLowerCase().indexOf(filter))
+        (searchKey && 0 <= searchKey.toLowerCase().indexOf(filter))
       ))
 
     this.setState({
       filter: text.toLowerCase(),
-      ds: this.state.ds.cloneWithRows(filtered)
+      ds: filtered
     })
   }
 }
@@ -240,8 +236,8 @@ ModalFilterPicker.propTypes = {
   titleTextStyle: PropTypes.any,
   overlayStyle: PropTypes.any,
   listContainerStyle: PropTypes.any,
-  optionTextStyle:PropTypes.any,
-  selectedOptionTextStyle:PropTypes.any,
+  optionTextStyle: PropTypes.any,
+  selectedOptionTextStyle: PropTypes.any,
   keyboardShouldPersistTaps: PropTypes.string
 }
 
@@ -255,3 +251,119 @@ ModalFilterPicker.defaultProps = {
   showFilter: true,
   keyboardShouldPersistTaps: 'never'
 }
+
+const { width, height } = Dimensions.get('window')
+
+const optionStyle = {
+  flex: 0,
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingVertical: 10,
+  paddingHorizontal: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee'
+}
+
+const optionTextStyle = {
+  flex: 1,
+  textAlign: 'left',
+  color: '#000',
+  fontSize: 22
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  titleTextStyle: {
+    flex: 0,
+    color: '#fff',
+    fontSize: 20,
+    marginBottom: 15
+  },
+  listContainer: {
+    flex: 1,
+    width: width * 0.8,
+    maxHeight: height * 0.7,
+    backgroundColor: '#fff',
+    borderRadius: 0,
+    marginBottom: 15
+  },
+  cancelContainer: {
+    flex: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cancelButton: {
+    flex: 0,
+    backgroundColor: '#999',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10
+  },
+  cancelButtonText: {
+    textAlign: 'center',
+    fontSize: 18
+  },
+  filterTextInputContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#999'
+  },
+  filterTextInput: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    flex: 0,
+    height: 50
+  },
+  categoryStyle: {
+    ...optionStyle
+  },
+  categoryTextStyle: {
+    ...optionTextStyle,
+    color: '#999',
+    fontStyle: 'italic',
+    fontSize: 16
+  },
+  optionStyle: {
+    ...optionStyle
+  },
+  optionStyleLastChild: {
+    borderBottomWidth: 0
+  },
+  optionTextStyle: {
+    ...optionTextStyle
+  },
+  selectedOptionStyle: {
+    ...optionStyle
+  },
+  selectedOptionStyleLastChild: {
+    borderBottomWidth: 0
+  },
+  selectedOptionTextStyle: {
+    ...optionTextStyle,
+    fontWeight: '700'
+  },
+  noResults: {
+    flex: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10
+  },
+  noResultsText: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#ccc',
+    fontStyle: 'italic',
+    fontSize: 22
+  }
+})
